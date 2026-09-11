@@ -54,22 +54,27 @@ const AdminLogin = () => {
         }
       }
 
-      // Flujo normal para otros usuarios o si el backend responde pero con error de credenciales
-      const response = await fetch(`\/api/auth/login`, {
+      const response = await fetch(`/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data = {};
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (jsonErr) {
+        throw new Error(`El servidor devolvió una respuesta no válida (${response.status}): ${responseText.slice(0, 100)}`);
+      }
 
-      if (!response.ok) throw new Error(data.error || 'Credenciales incorrectas');
+      if (!response.ok) throw new Error(data.error || data.details || 'Credenciales incorrectas');
 
       login(data.user, data.token);
 
-      if (data.user.rol === 'COCINERO') navigate('/cocina');
-      else if (data.user.rol === 'CAJERO') navigate('/caja');
-      else if (data.user.rol === 'TOTEM' || data.user.rol === 'CLIENTE') navigate('/cliente');
+      if (data.user?.rol === 'COCINERO') navigate('/cocina');
+      else if (data.user?.rol === 'CAJERO') navigate('/caja');
+      else if (data.user?.rol === 'TOTEM' || data.user?.rol === 'CLIENTE') navigate('/cliente');
       else navigate('/admin');
     } catch (err) {
       setError(err.message);

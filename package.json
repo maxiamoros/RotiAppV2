@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "description": "Sistema de gestión para Rotisería Central",
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
-    "build": "npx prisma generate --schema=./prisma/schema.prisma && cd frontend && npm run build"
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "nodemon api/index.js",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npx prisma generate --schema=./prisma/schema.prisma && cd frontend && npm run build",
+    "vercel-build": "npx prisma generate --schema=./prisma/schema.prisma && cd frontend && npm run build",
+    "postinstall": "npx prisma generate --schema=./prisma/schema.prisma",
+    "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma",
+    "prisma:db-push": "npx prisma db push --schema=./prisma/schema.prisma"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

@@ -1,11 +1,12 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../prisma');
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_key_123';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'rotiapp_secreto_super_seguro_2026';
 
 const login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password } = req.body || {};
     
     if (!username || !password) {
       return res.status(400).json({ error: 'Username y password son requeridos' });
@@ -31,7 +32,7 @@ const login = async (req, res) => {
       { expiresIn: '8h' }
     );
 
-    res.json({
+    return res.status(200).json({
       token,
       user: {
         id: user.id,
@@ -41,14 +42,15 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error('Error en login:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    return res.status(500).json({ 
+      error: 'Error al procesar el inicio de sesión', 
+      details: error.message || 'Error interno'
+    });
   }
 };
 
 const logout = (req, res) => {
-  // Para JWT stateless, el logout se maneja en el frontend borrando el token.
-  // Aquí solo respondemos OK.
-  res.json({ message: 'Logout exitoso' });
+  return res.status(200).json({ message: 'Logout exitoso' });
 };
 
 module.exports = {
