@@ -28,6 +28,7 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
+      // Petición a la Serverless Function de Vercel en /api/login
       console.log(`[LOGIN FETCH] POST /api/login con usuario: "${username}"`);
 
       const response = await fetch(`/api/login`, {
