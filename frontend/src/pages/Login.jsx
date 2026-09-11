@@ -28,9 +28,9 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      console.log(`[LOGIN FETCH] POST /api/auth/login con usuario: "${username}"`);
+      console.log(`[LOGIN FETCH] POST /api/login con usuario: "${username}"`);
 
-      const response = await fetch(`/api/auth/login`, {
+      const response = await fetch(`/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),

@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const prisma = require('../prisma');
+const prisma = require('./prisma');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'rotiapp_secreto_super_seguro_2026';
 
