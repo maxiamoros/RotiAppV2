@@ -25,8 +25,14 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Middleware de diagnóstico de log de rutas para Serverless Function
+app.use((req, res, next) => {
+  console.log(`[SERVERLESS REQ] ${req.method} | url: "${req.url}" | originalUrl: "${req.originalUrl}"`);
+  next();
+});
+
 // Endpoint de verificación de salud y base de datos
-app.get('/api/db-check', async (req, res) => {
+app.get(['/api/db-check', '/db-check'], async (req, res) => {
   try {
     const prisma = require('./prisma');
     await prisma.$queryRaw`SELECT 1`;
@@ -46,25 +52,33 @@ app.get('/api/db-check', async (req, res) => {
   }
 });
 
-// Configuración de Rutas de la API
-app.use('/api/ia', chatRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/usuarios', usuariosRoutes);
-app.use('/api/config', configRoutes);
-app.use('/api/categorias', categoriasRoutes);
-app.use('/api/insumos', insumosRoutes);
-app.use('/api/productos', productosRoutes);
-app.use('/api/ventas', ventasRoutes);
-app.use('/api/upload', uploadRoutes);
+// Configuración de Rutas de la API (soporta tanto /api/rutas como /rutas)
+app.use(['/api/ia', '/ia'], chatRoutes);
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/usuarios', '/usuarios'], usuariosRoutes);
+app.use(['/api/config', '/config'], configRoutes);
+app.use(['/api/categorias', '/categorias'], categoriasRoutes);
+app.use(['/api/insumos', '/insumos'], insumosRoutes);
+app.use(['/api/productos', '/productos'], productosRoutes);
+app.use(['/api/ventas', '/ventas'], ventasRoutes);
+app.use(['/api/upload', '/upload'], uploadRoutes);
 
-// Manejador 404 para endpoints de la API desconcidos
-app.use('/api/(.*)', (req, res) => {
-  return res.status(404).json({ error: `Ruta de API no encontrada: ${req.method} ${req.originalUrl}` });
+// Fallback directo por si Vercel remueve completamente el prefijo /api/auth
+app.use('/', authRoutes);
+
+// Manejador 404 para endpoints de la API no encontrados (garantiza JSON)
+app.use((req, res) => {
+  console.warn(`[404 NOT FOUND] ${req.method} | url: "${req.url}" | originalUrl: "${req.originalUrl}"`);
+  return res.status(404).json({ 
+    error: `Ruta de API no encontrada: ${req.method} ${req.originalUrl || req.url}`,
+    url: req.url,
+    originalUrl: req.originalUrl
+  });
 });
 
-// Middleware Global de Error - Asegura que NUNCA se devuelva HTML o respuestas vacías
+// Middleware Global de Error - Garantiza que NUNCA se devuelva HTML o respuestas vacías
 app.use((err, req, res, next) => {
-  console.error('Unhandled API Server Error:', err);
+  console.error('[500 UNHANDLED ERROR]:', err);
   if (res.headersSent) {
     return next(err);
   }
@@ -76,7 +90,7 @@ app.use((err, req, res, next) => {
 // Exportación para Serverless Function de Vercel
 module.exports = app;
 
-// Servidor local si se ejecuta con node api/index.js
+// Servidor local si se ejecuta directamente
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`🚀 Servidor backend corriendo en puerto ${PORT}`);

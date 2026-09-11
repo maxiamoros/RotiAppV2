@@ -28,31 +28,7 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      // Fallback temporal para Vercel (si el backend en localhost no responde)
-      if (username === 'admin' && password === 'admin123') {
-        try {
-          // Intentar conectar con el backend real primero
-          const response = await fetch(`\/api/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }),
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            login(data.user, data.token);
-            navigate('/admin');
-            return;
-          }
-        } catch (networkError) {
-          console.warn('Backend local inaccesible desde Vercel. Usando login de fallback.');
-          const fallbackUser = { id: 1, username: 'admin', rol: 'ADMIN' };
-          const fallbackToken = 'token-temporal-offline';
-          login(fallbackUser, fallbackToken);
-          navigate('/admin');
-          return;
-        }
-      }
+      console.log(`[LOGIN FETCH] POST /api/auth/login con usuario: "${username}"`);
 
       const response = await fetch(`/api/auth/login`, {
         method: 'POST',
@@ -60,15 +36,29 @@ const AdminLogin = () => {
         body: JSON.stringify({ username, password }),
       });
 
+      // Console.log de la respuesta cruda para diagnóstico
+      console.log('[LOGIN RAW RESPONSE]:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        contentType: response.headers.get('content-type'),
+        url: response.url
+      });
+
       const responseText = await response.text();
+      console.log('[LOGIN RAW BODY]:', responseText);
+
       let data = {};
       try {
         data = responseText ? JSON.parse(responseText) : {};
       } catch (jsonErr) {
-        throw new Error(`El servidor devolvió una respuesta no válida (${response.status}): ${responseText.slice(0, 100)}`);
+        console.error('[LOGIN JSON PARSE ERROR]:', jsonErr, 'Cuerpo de la respuesta:', responseText);
+        throw new Error(`Servidor devolvió HTTP ${response.status} (${response.statusText}) sin JSON válido: ${responseText.slice(0, 150)}`);
       }
 
-      if (!response.ok) throw new Error(data.error || data.details || 'Credenciales incorrectas');
+      if (!response.ok) {
+        throw new Error(data.error || data.details || `Error ${response.status}: Credenciales incorrectas`);
+      }
 
       login(data.user, data.token);
 
@@ -77,6 +67,7 @@ const AdminLogin = () => {
       else if (data.user?.rol === 'TOTEM' || data.user?.rol === 'CLIENTE') navigate('/cliente');
       else navigate('/admin');
     } catch (err) {
+      console.error('[LOGIN ERROR CATCH]:', err);
       setError(err.message);
     } finally {
       setLoading(false);
